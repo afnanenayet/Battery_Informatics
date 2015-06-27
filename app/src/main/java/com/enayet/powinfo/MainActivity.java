@@ -12,110 +12,112 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import java.util.ArrayList;
 
 public class MainActivity extends Activity {
-    private ArrayList<String> battery_list = new ArrayList<String>();
-    private String[] battery_stats = {"percentage", "capacity", "current", "health", "tempreature", "voltage", "technology", "status", "power", "mAh"};
-    private ArrayAdapter<String> adapter;
-    private BroadcastReceiver batteryInfoReceiver = new BroadcastReceiver() { //broadcast receiver gets realtime battery info
+    private String[] mBatteryStats = {"percentage", "capacity", "current", "health", "tempreature", "voltage", "technology", "status", "power", "mAh",}; //TODO: add back energy to the array
+    private ArrayAdapter<String> mAdapter;
+    private BroadcastReceiver mReceiver = new BroadcastReceiver() { //broadcast receiver gets realtime battery info
         @Override
         public void onReceive(Context context, Intent intent) {
 
-            //battery health
-            String health_string = "Battery health: ";
-            int health = intent.getIntExtra(BatteryManager.EXTRA_HEALTH, 0);
-            switch (health) {
-                case 1:
-                    health_string += "Unknown (according to your system)";
-                    break;
-                case 2:
-                    health_string += "Good";
-                    break;
-                case 3:
-                    health_string += "Overheating";
-                    break;
-                case 4:
-                    health_string += "Dead";
-                    break;
-                case 5:
-                    health_string += "Over voltage";
-                    break;
-                case 6:
-                    health_string += "Unspecified failure (according to your system)";
-                    break;
-            }
-            battery_stats[3] = health_string;
+            BatteryManager mBatManager = new BatteryManager(); //to get ints that can't be accessed through the intent (battery manager api)
 
-            int icon_small = intent.getIntExtra(BatteryManager.EXTRA_ICON_SMALL, 0);
+            //battery present?
+            mBatteryStats[0] = getString(R.string.battery_present_prompt) + intent.getIntExtra(BatteryManager.EXTRA_PRESENT, 0);
 
             //battery percentage
-            int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
-            battery_stats[0] = "Battery percentage: " + level + "%";
+            int mLevel = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
+            mBatteryStats[1] = getString(R.string.battery_percentage_prompt) + mLevel + getString(R.string.percent_character);
 
-            //battery temperature
-            int temperature = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0);
-            float precise_temp = temperature / 10;
-            battery_stats[4] = "Temperature: " + precise_temp + "°C";
+            //instant current flow
+            mBatteryStats[2] = getString(R.string.instant_currentflow_prompt) + mBatManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) + getString(R.string.micro_amperes);
 
-            //battery voltage
-            int voltage = intent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0);
-            battery_stats[5] = "Voltage: " + (voltage) + " mV";
-
-            //battery_technology
-            String technology = intent.getExtras().getString(BatteryManager.EXTRA_TECHNOLOGY);
-            battery_stats[6] = "Technology: " + technology;
-
-            //Battery_status
-            int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, 0);
-            String status_string = "Error: could not read status";
-            //turn int code into readable string for user
-            switch (status) {
+            //battery health
+            int strHealth = -1;
+            int mHealth = intent.getIntExtra(BatteryManager.EXTRA_HEALTH, 0);
+            switch (mHealth) {
                 case 1:
-                    status_string = "Unknown";
+                    strHealth = R.string.health_unknown;
                     break;
                 case 2:
-                    status_string = "Charging";
+                    strHealth = R.string.health_good;
                     break;
                 case 3:
-                    status_string = "Discharging";
+                    strHealth = R.string.health_overheat;
                     break;
                 case 4:
-                    status_string = "Not charging";
+                    strHealth = R.string.health_dead;
                     break;
                 case 5:
-                    status_string = "Battery full";
+                    strHealth = R.string.health_overvolt;
+                    break;
+                case 6:
+                    strHealth = R.string.health_failure;
                     break;
             }
-            battery_stats[7] = "Status: " + status_string;
+            mBatteryStats[3] = getString(R.string.battery_health_prompt) + getString(strHealth);
 
-            //power source
-            int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0);
-            String power_source_string;
-            switch (plugged) {
+            //battery temperature
+            int mTemp = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0);
+            float mPtemp = mTemp / 10;
+            mBatteryStats[4] = getString(R.string.temperature_prompt) + mPtemp + getString(R.string.degrees_celsius);
+
+            //battery voltage
+            int mVoltage = intent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0);
+            mBatteryStats[5] = getString(R.string.voltage_prompt) + (mVoltage) + getString(R.string.milivolts);
+
+            //battery_technology
+            String mTech = intent.getExtras().getString(BatteryManager.EXTRA_TECHNOLOGY);
+            mBatteryStats[6] = getString(R.string.technology_prompt) + mTech;
+
+            //Battery_status
+            int mStatus = intent.getIntExtra(BatteryManager.EXTRA_STATUS, 0);
+            int mStatusCode = -1;
+            //turn int code into readable string for user
+            switch (mStatus) {
                 case 1:
-                    power_source_string = "AC charger";
+                    mStatusCode = R.string.status_unknown;
                     break;
                 case 2:
-                    power_source_string = "USB port";
+                    mStatusCode = R.string.status_charging;
+                    break;
+                case 3:
+                    mStatusCode = R.string.status_discharging;
                     break;
                 case 4:
-                    power_source_string = "Wireless charger";
+                    mStatusCode = R.string.status_not_charging;
                     break;
-                default:
-                    power_source_string = "No power source";
+                case 5:
+                    mStatusCode = R.string.status_unknown;
                     break;
             }
-            battery_stats[8] = "Power source: " + power_source_string;
+            mBatteryStats[7] = getString(R.string.status_prompt) + getString(mStatusCode);
 
-            BatteryManager batman = new BatteryManager(); //to get ints that can't be accessed through the intent (battery manager api)
-            //battery capacity
-            battery_stats[1] = "Battery capacity (of original): " + batman.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) + "%";
-            //instant current flow
-            battery_stats[2] = "Instantaneous current flow: " + batman.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) + " μA";
+            //power source
+            int mPlugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0);
+            int power_source_string;
+            switch (mPlugged) {
+                case 1:
+                    power_source_string = R.string.ac_charger;
+                    break;
+                case 2:
+                    power_source_string = R.string.usb_charger;
+                    break;
+                case 4:
+                    power_source_string = R.string.wireless_charger;
+                    break;
+                default:
+                    power_source_string = R.string.no_charger;
+                    break;
+            }
+            mBatteryStats[8] = getString(R.string.power_source_prompt) + getString(power_source_string);
+
+
             //maximum battery level
-            battery_stats[9] = "Maximum battery level: " + intent.getIntExtra(BatteryManager.EXTRA_SCALE, 0) + "%";
-            adapter.notifyDataSetChanged(); //so the listview can update as its source data is changed
+            mBatteryStats[9] = getString(R.string.max_battery_prompt) + intent.getIntExtra(BatteryManager.EXTRA_SCALE, 0) + getString(R.string.percent_character); //TODO: see if this should be 0 or 100
+            mAdapter.notifyDataSetChanged(); //so the listview can update as its source data is changed
+            //remaining battery energy
+            // battery_stats[10] = "Remaining energy: " + batman.getIntProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER) + " nWh"; //TODO: fix
         }
     };
 
@@ -123,24 +125,24 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        this.registerReceiver(this.batteryInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED)); //register receiver to receive battery info
-        adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, battery_stats);
-        ListView listView = (ListView) findViewById(R.id.battery_stats_list);
-        listView.setAdapter(adapter);
+        this.registerReceiver(this.mReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED)); //register receiver to receive battery info
+        mAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_list_item_1, mBatteryStats);
+        ListView mListView = (ListView) findViewById(R.id.battery_stats_list);
+        mListView.setAdapter(mAdapter);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        this.unregisterReceiver(batteryInfoReceiver); //unregister receiver
+        this.unregisterReceiver(mReceiver); //unregister receiver
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         try {
-            this.unregisterReceiver(batteryInfoReceiver);
+            this.unregisterReceiver(mReceiver);
         } catch (IllegalArgumentException e) { //empty b/c this exception means that it has already been unregistered
         }                                      //so we don't have to do anything!
     }
@@ -148,8 +150,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        this.registerReceiver(this.batteryInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        adapter.notifyDataSetChanged();
+        this.registerReceiver(this.mReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED)); //register receiver as activity is back in focus
     }
 
     @Override
@@ -170,6 +171,4 @@ public class MainActivity extends Activity {
 
         return super.onOptionsItemSelected(item);
     }
-
-
 }
