@@ -21,10 +21,15 @@ public class MainActivity extends Activity {
         public void onReceive(Context context, Intent intent) {
 
             BatteryManager mBatManager = new BatteryManager(); //to get ints that can't be accessed through the intent (battery manager api)
-
+            String mPresent = "";
             //battery present?
             mBatteryStats[0] = getString(R.string.battery_present_prompt) + intent.getIntExtra(BatteryManager.EXTRA_PRESENT, 0);
-
+            if (intent.getIntExtra(BatteryManager.EXTRA_PRESENT, 0) == 0) {
+                mPresent = getString(R.string.yes);
+            } else {
+                mPresent = getString(R.string.no);
+            }
+            mBatteryStats[0] = getString(R.string.battery_present_prompt) + mPresent;
             //battery percentage
             int mLevel = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
             mBatteryStats[1] = getString(R.string.battery_percentage_prompt) + mLevel + getString(R.string.percent_character);
